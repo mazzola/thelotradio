@@ -33,9 +33,9 @@ import com.google.android.exoplayer.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer.upstream.DefaultUriDataSource;
 
 /**
- * A {@link AudioPlayer.RendererBuilder} for streams that can be read using an {@link Extractor}.
+ * A {@link RendererBuilder} for streams that can be read using an {@link Extractor}.
  */
-public class ExtractorRendererBuilder implements AudioPlayer.RendererBuilder {
+public class ExtractorAudioRendererBuilder implements RendererBuilder {
 
   private static final int BUFFER_SEGMENT_SIZE = 64 * 1024;
   private static final int BUFFER_SEGMENT_COUNT = 256;
@@ -44,7 +44,7 @@ public class ExtractorRendererBuilder implements AudioPlayer.RendererBuilder {
   private final String userAgent;
   private final Uri uri;
 
-  public ExtractorRendererBuilder(Context context, String userAgent, Uri uri) {
+  public ExtractorAudioRendererBuilder(Context context, String userAgent, Uri uri) {
     this.context = context;
     this.userAgent = userAgent;
     this.uri = uri;
