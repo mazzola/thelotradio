@@ -66,7 +66,7 @@ public class AudioPlayback implements Playback, AudioManager.OnAudioFocusChangeL
             audioPlayer.prepare();
             wifiLock.acquire();
             if (callback != null) {
-                callback.onPlaybackStatusChanged(state);
+                callback.onPlaybackStatusChanged(createPlaybackState(state));
             }
         }
     }
@@ -82,7 +82,7 @@ public class AudioPlayback implements Playback, AudioManager.OnAudioFocusChangeL
         }
         state = PlaybackStateCompat.STATE_PAUSED;
         if (callback != null) {
-            callback.onPlaybackStatusChanged(state);
+            callback.onPlaybackStatusChanged(createPlaybackState(state));
         }
         AudioNoisyManager.unregisterAudioNoisyReceiver(context);
     }
@@ -91,7 +91,7 @@ public class AudioPlayback implements Playback, AudioManager.OnAudioFocusChangeL
     public void stop(boolean notifyListeners) {
         state = PlaybackStateCompat.STATE_STOPPED;
         if (notifyListeners && callback != null) {
-            callback.onPlaybackStatusChanged(state);
+            callback.onPlaybackStatusChanged(createPlaybackState(state));
         }
         giveUpAudioFocus();
         AudioNoisyManager.unregisterAudioNoisyReceiver(context);
@@ -233,8 +233,24 @@ public class AudioPlayback implements Playback, AudioManager.OnAudioFocusChangeL
             }
         }
         if (callback != null) {
-            callback.onPlaybackStatusChanged(state);
+            callback.onPlaybackStatusChanged(createPlaybackState(state));
         }
+    }
+
+    private PlaybackStateCompat createPlaybackState(int state) {
+        //noinspection ResourceType
+        PlaybackStateCompat.Builder stateBuilder = new PlaybackStateCompat.Builder()
+                .setActions(getAvailableActions());
+        stateBuilder.setState(state, 0, 1.0f);
+        return stateBuilder.build();
+    }
+
+    private long getAvailableActions() {
+        long actions = PlaybackStateCompat.ACTION_PLAY;
+        if (isPlaying()) {
+            actions |= PlaybackStateCompat.ACTION_PAUSE;
+        }
+        return actions;
     }
 
     private void giveUpAudioFocus() {

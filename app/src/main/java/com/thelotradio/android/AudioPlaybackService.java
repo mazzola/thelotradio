@@ -4,7 +4,6 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.RemoteException;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.media.MediaBrowserCompat;
@@ -14,7 +13,6 @@ import android.support.v4.media.session.MediaButtonReceiver;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 
-import com.thelotradio.android.media.EventLogger;
 import com.thelotradio.android.playback.AudioPlayback;
 import com.thelotradio.android.playback.Playback;
 
@@ -25,48 +23,43 @@ import java.util.List;
  */
 public class AudioPlaybackService extends MediaBrowserServiceCompat implements Playback.Callback {
     public static final String ACTION_PAUSE = "com.thelotradio.android.action.PAUSE";
-    private EventLogger eventLogger;
-    private boolean playerNeedsPrepare;
-//    private MediaSessionCompat session;
-    private MediaNotificationManager mediaNotificationManager;
+    private MediaSessionCompat session;
     private AudioPlayback audioPlayback;
 
     @Override
     public void onCreate() {
         super.onCreate();
         audioPlayback = new AudioPlayback(this);
-        audioPlayback.play();
-//        // Start a new MediaSession
-//        session = new MediaSessionCompat(this, "TheLotRadio");
+        audioPlayback.setCallback(this);
+        // Start a new MediaSession
+        session = new MediaSessionCompat(this, "TheLotRadio");
 //        setSessionToken(session.getSessionToken());
-//        session.setCallback(new MediaSessionCallback());
-//        session.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS |
-//                MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
-//
-//        Context context = getApplicationContext();
-//        Intent intent = new Intent(context, PlayerActivity.class);
-//        PendingIntent pi = PendingIntent.getActivity(context, 99,
-//                intent, PendingIntent.FLAG_UPDATE_CURRENT);
-//        session.setSessionActivity(pi);
-//
-//        try {
-//            mediaNotificationManager = new MediaNotificationManager(this);
-//        } catch (RemoteException e) {
-//            throw new IllegalStateException("Could not create a MediaNotificationManager", e);
-//        }
+        session.setCallback(new MediaSessionCallback());
+        session.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS |
+                MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
+
+        Context context = getApplicationContext();
+        Intent intent = new Intent(context, PlayerActivity.class);
+        PendingIntent pi = PendingIntent.getActivity(context, 99,
+                intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        session.setSessionActivity(pi);
+        if (!session.isActive()) {
+            session.setActive(true);
+        }
+
+        audioPlayback.play();
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-//        MediaButtonReceiver.handleIntent(session, intent);
+        MediaButtonReceiver.handleIntent(session, intent);
         return START_STICKY;
     }
 
     @Override
     public void onDestroy() {
         audioPlayback.stop(true);
-//        mediaNotificationManager.stopNotification();
-//        session.release();
+        session.release();
     }
 
     @Nullable
@@ -86,8 +79,8 @@ public class AudioPlaybackService extends MediaBrowserServiceCompat implements P
     }
 
     @Override
-    public void onPlaybackStatusChanged(int state) {
-
+    public void onPlaybackStatusChanged(PlaybackStateCompat state) {
+        session.setPlaybackState(state);
     }
 
     @Override
@@ -100,33 +93,30 @@ public class AudioPlaybackService extends MediaBrowserServiceCompat implements P
 
     }
 
-//    private class MediaSessionCallback extends MediaSessionCompat.Callback {
-//        @Override
-//        public void onPlay() {
-//            if (!audioPlayback.isPlaying()) {
-//                audioPlayback.play();
-//                if (!session.isActive()) {
-//                    session.setActive(true);
-//                }
-//                session.setMetadata(
-//                        new MediaMetadataCompat.Builder()
-//                                .putText(MediaMetadataCompat.METADATA_KEY_TITLE,
-//                                        getApplicationContext().getString(R.string.app_name))
-//                                .build());
-//            }
-//        }
-//
-//        @Override
-//        public void onPause() {
-//            if (audioPlayback.isPlaying()) {
-//                audioPlayback.pause();
-//            }
-//        }
-//
-//        @Override
-//        public void onStop() {
-//            audioPlayback.stop(true);
-//            session.setActive(false);
-//        }
-//    }
+    private class MediaSessionCallback extends MediaSessionCompat.Callback {
+        @Override
+        public void onPlay() {
+            if (!audioPlayback.isPlaying()) {
+                audioPlayback.play();
+                session.setMetadata(
+                        new MediaMetadataCompat.Builder()
+                                .putText(MediaMetadataCompat.METADATA_KEY_TITLE,
+                                        getApplicationContext().getString(R.string.app_name))
+                                .build());
+            }
+        }
+
+        @Override
+        public void onPause() {
+            if (audioPlayback.isPlaying()) {
+                audioPlayback.pause();
+            }
+        }
+
+        @Override
+        public void onStop() {
+            audioPlayback.stop(true);
+            session.setActive(false);
+        }
+    }
 }

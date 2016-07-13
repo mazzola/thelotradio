@@ -15,9 +15,9 @@
  */
 package com.thelotradio.android.playback;
 
-import com.thelotradio.android.AudioPlaybackService;
+import android.support.v4.media.session.PlaybackStateCompat;
 
-import static android.support.v4.media.session.MediaSessionCompat.QueueItem;
+import com.thelotradio.android.AudioPlaybackService;
 
 /**
  * Interface representing either Local or Remote Playback. The {@link AudioPlaybackService} works
@@ -75,7 +75,7 @@ public interface Playback {
          * Implementations can use this callback to update
          * playback state on the media sessions.
          */
-        void onPlaybackStatusChanged(int state);
+        void onPlaybackStatusChanged(PlaybackStateCompat state);
 
         /**
          * @param error to be added to the PlaybackState
