@@ -50,10 +50,9 @@ public class PlayerActivity extends Activity implements View.OnClickListener {
 
     @Override
     public void onClick(View view) {
-//        if (audioPlayer != null) {
-//            audioPlayer.setPlayWhenReady(!audioPlayer.getPlayWhenReady());
-//            playerStatus.setText(audioPlayer.getPlayWhenReady() ?
-//                    R.string.playing : R.string.paused);
-//        }
+        Intent pauseIntent = new Intent(this, AudioPlaybackService.class);
+        pauseIntent.setAction(AudioPlaybackService.ACTION_PAUSE);
+        startService(pauseIntent);
+        playerStatus.setText(R.string.paused);
     }
 }

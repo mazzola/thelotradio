@@ -42,8 +42,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * with one of a number of {@link RendererBuilder} classes to suit different use cases (e.g. DASH,
  * SmoothStreaming and so on).
  */
-public class AudioPlayer implements ExoPlayer.Listener,
-        ExtractorSampleSource.EventListener,
+public class AudioPlayer implements ExoPlayer.Listener, ExtractorSampleSource.EventListener,
         MediaCodecAudioTrackRenderer.EventListener {
 
     /**
@@ -104,6 +103,7 @@ public class AudioPlayer implements ExoPlayer.Listener,
     private int rendererBuildingState;
     private int lastReportedPlaybackState;
     private boolean lastReportedPlayWhenReady;
+    private ExoPlayer.ExoPlayerComponent audioRenderer;
 
     private InternalErrorListener internalErrorListener;
 
@@ -163,6 +163,7 @@ public class AudioPlayer implements ExoPlayer.Listener,
         }
         // Complete preparation.
         player.prepare(renderers);
+        audioRenderer = renderers[0];
         rendererBuildingState = RENDERER_BUILDING_STATE_BUILT;
     }
 
@@ -215,6 +216,10 @@ public class AudioPlayer implements ExoPlayer.Listener,
 
     /* package */ Handler getMainHandler() {
         return mainHandler;
+    }
+
+    public void setVolume(float volume) {
+        player.sendMessage(audioRenderer, MediaCodecAudioTrackRenderer.MSG_SET_VOLUME, volume);
     }
 
     @Override
