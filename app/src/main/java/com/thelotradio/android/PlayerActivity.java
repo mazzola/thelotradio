@@ -15,9 +15,16 @@
  */
 package com.thelotradio.android;
 
-import android.app.Activity;
+import android.content.ComponentName;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
+import android.os.RemoteException;
+import android.support.v4.media.session.MediaControllerCompat;
+import android.support.v4.media.session.PlaybackStateCompat;
+import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -27,7 +34,7 @@ import com.thelotradio.android.media.AudioPlayer;
 /**
  * An activity that plays media using {@link AudioPlayer}.
  */
-public class PlayerActivity extends Activity implements View.OnClickListener {
+public class PlayerActivity extends AppCompatActivity implements View.OnClickListener {
 
     private static final String TAG = "TheLotRadio";
 
@@ -43,16 +50,51 @@ public class PlayerActivity extends Activity implements View.OnClickListener {
         playerStatus = (TextView) findViewById(R.id.player_status);
         logo.setOnClickListener(this);
         playerStatus.setOnClickListener(this);
-
-        startService(new Intent(this, AudioPlaybackService.class));
+        bindService(new Intent(this, AudioPlaybackService.class), serviceConnection, BIND_AUTO_CREATE);
     }
 
 
     @Override
     public void onClick(View view) {
-        Intent pauseIntent = new Intent(this, AudioPlaybackService.class);
-        pauseIntent.setAction(AudioPlaybackService.ACTION_PAUSE);
-        startService(pauseIntent);
-        playerStatus.setText(R.string.paused);
+        MediaControllerCompat controller = getSupportMediaController();
+        if (controller != null) {
+            int state = controller.getPlaybackState().getState();
+            if (state == PlaybackStateCompat.STATE_PAUSED) {
+                controller.getTransportControls().play();
+            } else if (state == PlaybackStateCompat.STATE_PLAYING) {
+                controller.getTransportControls().pause();
+            }
+        }
     }
+
+    /** Defines callbacks for service binding, passed to bindService() */
+    private ServiceConnection serviceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            AudioPlaybackService.LocalBinder binder = (AudioPlaybackService.LocalBinder) service;
+            try {
+                setSupportMediaController(new MediaControllerCompat(PlayerActivity.this,
+                        binder.getSessionToken()));
+                getSupportMediaController().registerCallback(controllerCallback);
+            } catch (RemoteException e) {
+                Log.e(TAG, "Failed to create media controller", e);
+            }
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+
+        }
+    };
+
+    private MediaControllerCompat.Callback controllerCallback = new MediaControllerCompat.Callback() {
+        @Override
+        public void onPlaybackStateChanged(PlaybackStateCompat state) {
+            if (state.getState() == PlaybackStateCompat.STATE_PLAYING) {
+                playerStatus.setText(getString(R.string.playing));
+            } else if (state.getState() == PlaybackStateCompat.STATE_PAUSED) {
+                playerStatus.setText(getString(R.string.paused));
+            }
+        }
+    };
 }

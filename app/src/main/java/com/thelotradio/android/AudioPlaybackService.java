@@ -1,13 +1,12 @@
 package com.thelotradio.android;
 
 import android.app.PendingIntent;
+import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Bundle;
-import android.support.annotation.NonNull;
+import android.os.Binder;
+import android.os.IBinder;
 import android.support.annotation.Nullable;
-import android.support.v4.media.MediaBrowserCompat;
-import android.support.v4.media.MediaBrowserServiceCompat;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaButtonReceiver;
 import android.support.v4.media.session.MediaSessionCompat;
@@ -16,16 +15,20 @@ import android.support.v4.media.session.PlaybackStateCompat;
 import com.thelotradio.android.playback.AudioPlayback;
 import com.thelotradio.android.playback.Playback;
 
-import java.util.List;
-
 /**
  * Background service for playing audio
  */
-public class AudioPlaybackService extends MediaBrowserServiceCompat implements Playback.Callback {
-    public static final String ACTION_PAUSE = "com.thelotradio.android.action.PAUSE";
+public class AudioPlaybackService extends Service implements Playback.Callback {
     private MediaSessionCompat session;
     private AudioPlayback audioPlayback;
     private NotificationManager notificationManager;
+    private final IBinder binder = new LocalBinder();
+
+    public class LocalBinder extends Binder {
+        MediaSessionCompat.Token getSessionToken() {
+            return session.getSessionToken();
+        }
+    }
 
     @Override
     public void onCreate() {
@@ -73,13 +76,8 @@ public class AudioPlaybackService extends MediaBrowserServiceCompat implements P
 
     @Nullable
     @Override
-    public BrowserRoot onGetRoot(@NonNull String clientPackageName, int clientUid, @Nullable Bundle rootHints) {
-        return null;
-    }
-
-    @Override
-    public void onLoadChildren(@NonNull String parentId, @NonNull Result<List<MediaBrowserCompat.MediaItem>> result) {
-
+    public IBinder onBind(Intent intent) {
+        return binder;
     }
 
     @Override
