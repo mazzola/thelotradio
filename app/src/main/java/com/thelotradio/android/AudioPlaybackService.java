@@ -25,15 +25,15 @@ public class AudioPlaybackService extends MediaBrowserServiceCompat implements P
     public static final String ACTION_PAUSE = "com.thelotradio.android.action.PAUSE";
     private MediaSessionCompat session;
     private AudioPlayback audioPlayback;
+    private NotificationManager notificationManager;
 
     @Override
     public void onCreate() {
         super.onCreate();
-        audioPlayback = new AudioPlayback(this);
+        audioPlayback = new AudioPlayback(this, this);
         audioPlayback.setCallback(this);
         // Start a new MediaSession
         session = new MediaSessionCompat(this, "TheLotRadio");
-//        setSessionToken(session.getSessionToken());
         session.setCallback(new MediaSessionCallback());
         session.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS |
                 MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
@@ -48,6 +48,15 @@ public class AudioPlaybackService extends MediaBrowserServiceCompat implements P
         }
 
         audioPlayback.play();
+        session.setMetadata(
+                new MediaMetadataCompat.Builder()
+                        .putText(MediaMetadataCompat.METADATA_KEY_TITLE,
+                                getApplicationContext().getString(R.string.app_name))
+                        .putText(MediaMetadataCompat.METADATA_KEY_ARTIST,
+                                getString(R.string.subtitle))
+                        .build());
+        notificationManager = new NotificationManager(this, session);
+        notificationManager.startNotification();
     }
 
     @Override
@@ -98,11 +107,7 @@ public class AudioPlaybackService extends MediaBrowserServiceCompat implements P
         public void onPlay() {
             if (!audioPlayback.isPlaying()) {
                 audioPlayback.play();
-                session.setMetadata(
-                        new MediaMetadataCompat.Builder()
-                                .putText(MediaMetadataCompat.METADATA_KEY_TITLE,
-                                        getApplicationContext().getString(R.string.app_name))
-                                .build());
+                notificationManager.updateNotification();
             }
         }
 
@@ -110,6 +115,7 @@ public class AudioPlaybackService extends MediaBrowserServiceCompat implements P
         public void onPause() {
             if (audioPlayback.isPlaying()) {
                 audioPlayback.pause();
+                notificationManager.updateNotification();
             }
         }
 
@@ -117,6 +123,7 @@ public class AudioPlaybackService extends MediaBrowserServiceCompat implements P
         public void onStop() {
             audioPlayback.stop(true);
             session.setActive(false);
+            notificationManager.stopNotification();
         }
     }
 }

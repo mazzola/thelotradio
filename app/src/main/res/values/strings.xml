@@ -11,5 +11,6 @@
     <string name="paused">paused</string>
     <string name="label_pause">Pause</string>
     <string name="label_play">Play</string>
+    <string name="subtitle">Live From Brooklyn</string>
 
 </resources>

@@ -34,7 +34,6 @@ public class AudioPlayback implements Playback, AudioManager.OnAudioFocusChangeL
 
     private Context context;
     private AudioPlayer audioPlayer;
-    private boolean playerNeedsPrepare;
     private Callback callback;
     private int audioFocus = AUDIO_NO_FOCUS_NO_DUCK;
     private int state = PlaybackStateCompat.STATE_NONE;
@@ -42,8 +41,9 @@ public class AudioPlayback implements Playback, AudioManager.OnAudioFocusChangeL
     private EventLogger eventLogger;
     private WifiManager.WifiLock wifiLock;
 
-    public AudioPlayback(Context context) {
+    public AudioPlayback(Context context, Callback callback) {
         this.context = context;
+        this.callback = callback;
         audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
         wifiLock = ((WifiManager) context.getSystemService(Context.WIFI_SERVICE))
                 .createWifiLock(WifiManager.WIFI_MODE_FULL, "thelotradio_lock");
@@ -160,7 +160,6 @@ public class AudioPlayback implements Playback, AudioManager.OnAudioFocusChangeL
 
     @Override
     public void onError(Exception e) {
-        playerNeedsPrepare = true;
         if (callback == null) {
             return;
         }
@@ -192,7 +191,6 @@ public class AudioPlayback implements Playback, AudioManager.OnAudioFocusChangeL
     private void createPlayer() {
         if (audioPlayer == null) {
             audioPlayer = new AudioPlayer(context, MusicProvider.STREAM_128KBPS);
-            playerNeedsPrepare = true;
             eventLogger = new EventLogger();
             eventLogger.startSession();
             audioPlayer.addListener(eventLogger);
